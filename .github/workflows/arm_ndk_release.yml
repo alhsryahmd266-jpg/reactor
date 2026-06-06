@@ -1,0 +1,22 @@
+name: ARM NDK Release
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download NDK
+        run: |
+          wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
+          ls -lh ndk.zip
+          sha1sum ndk.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ndk-r25c
+          name: "Android NDK r25c"
+          files: ndk.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
