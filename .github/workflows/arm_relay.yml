@@ -1,0 +1,27 @@
+name: ARM NDK Relay
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL to download'
+        required: true
+      filename:
+        description: 'Output filename'  
+        required: true
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download file
+        run: |
+          wget -q "${{ github.event.inputs.url }}" -O "${{ github.event.inputs.filename }}"
+          ls -lh "${{ github.event.inputs.filename }}"
+          echo "SIZE=$(stat -c%s ${{ github.event.inputs.filename }})" >> $GITHUB_ENV
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm-relay-file
+          path: ${{ github.event.inputs.filename }}
+          retention-days: 1
