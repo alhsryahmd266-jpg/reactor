@@ -9,14 +9,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download NDK
         run: |
-          wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
+          wget -q --show-progress "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
           ls -lh ndk.zip
 
-      - name: Create Release & Upload
+      - name: Delete old release if exists
         run: |
-          gh release create ndk-r25c --title "NDK r25c" --notes "ARM Agent NDK" || true
-          gh release upload ndk-r25c ndk.zip --clobber
+          gh release delete ndk-r25c --yes 2>/dev/null || true
+          git push --delete origin refs/tags/ndk-r25c 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create new release with NDK
+        run: |
+          gh release create ndk-r25c ndk.zip             --title "Android NDK r25c"             --notes "ARM Agent - Android NDK r25c Linux"             --latest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
