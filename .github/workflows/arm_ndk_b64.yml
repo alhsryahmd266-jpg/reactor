@@ -1,0 +1,49 @@
+name: ARM NDK Base64
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Remove LFS tracking
+        run: |
+          # نحذف LFS tracking
+          rm -f .gitattributes
+          git config --global lfs.enabled false
+
+      - name: Download NDK & Convert to base64 chunks
+        run: |
+          wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
+          echo "NDK: $(ls -lh ndk.zip)"
+          mkdir -p ndk_b64
+          # نقسم لـ 8MB binary chunks ثم نحولهم base64
+          split -b 8m ndk.zip ndk_b64/part_
+          echo "Parts: $(ls ndk_b64/ | wc -l)"
+          # نحول كل part لـ base64
+          for f in ndk_b64/part_*; do
+            base64 "$f" > "${f}.b64"
+            rm "$f"
+            echo "Converted: ${f}.b64 ($(wc -c < ${f}.b64) bytes)"
+          done
+          ls -lh ndk_b64/
+
+      - name: Commit base64 files (no LFS)
+        run: |
+          git config user.email "arm@agent.com"
+          git config user.name "ARM Agent"
+          # تأكد مفيش LFS
+          git rm -r --cached ndk_chunks/ 2>/dev/null || true
+          git add ndk_b64/
+          git commit -m "ARM NDK base64 chunks"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
