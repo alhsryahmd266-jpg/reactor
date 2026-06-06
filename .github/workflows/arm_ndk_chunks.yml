@@ -1,10 +1,9 @@
 name: ARM NDK Chunks
 on:
   workflow_dispatch:
-    inputs:
-      chunk_size_mb:
-        description: 'Chunk size in MB'
-        default: '50'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -12,22 +11,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download & Split NDK
         run: |
           wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
+          echo "NDK size: $(ls -lh ndk.zip)"
           mkdir -p ndk_chunks
-          # Split into 50MB chunks
-          split -b 50m ndk.zip ndk_chunks/ndk_chunk_
+          # Split into 90MB chunks (under GitHub 100MB limit)
+          split -b 90m ndk.zip ndk_chunks/chunk_
+          echo "Chunks: $(ls ndk_chunks/ | wc -l)"
           ls -lh ndk_chunks/
-          echo "CHUNKS=$(ls ndk_chunks/ | wc -l)" >> $GITHUB_ENV
 
-      - name: Commit chunks to repo
+      - name: Push chunks via GitHub API
         run: |
           git config user.email "arm@agent.com"
           git config user.name "ARM Agent"
-          git add ndk_chunks/
-          git commit -m "ARM: NDK r25c chunks"
+          # نستخدم git lfs للملفات الكبيرة
+          git lfs install
+          git lfs track "ndk_chunks/*"
+          git add .gitattributes ndk_chunks/
+          git commit -m "ARM NDK chunks" || echo "Nothing to commit"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
