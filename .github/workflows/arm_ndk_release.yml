@@ -2,6 +2,9 @@ name: ARM NDK Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,13 +13,10 @@ jobs:
         run: |
           wget -q "https://dl.google.com/android/repository/android-ndk-r25c-linux.zip" -O ndk.zip
           ls -lh ndk.zip
-          sha1sum ndk.zip
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ndk-r25c
-          name: "Android NDK r25c"
-          files: ndk.zip
+      - name: Create Release & Upload
+        run: |
+          gh release create ndk-r25c --title "NDK r25c" --notes "ARM Agent NDK" || true
+          gh release upload ndk-r25c ndk.zip --clobber
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
