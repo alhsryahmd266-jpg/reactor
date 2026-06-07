@@ -1,0 +1,29 @@
+name: ARM Unreal Build
+on:
+  workflow_dispatch:
+    inputs:
+      project_url:
+        description: 'Unreal Project URL'
+        required: false
+        default: 'new'
+
+jobs:
+  build:
+    # GitHub Actions عنده ubuntu-latest مع GPU support
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check GPU
+        run: |
+          lspci | grep -i vga || echo "No GPU found"
+          nvidia-smi || echo "No NVIDIA GPU"
+          vulkaninfo --summary 2>/dev/null || echo "No Vulkan"
+          glxinfo 2>/dev/null | head -5 || echo "No GLX"
+          
+      - name: Check disk space
+        run: df -h
+        
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y build-essential cmake python3             libgl1-mesa-dev libegl1-mesa-dev             libvulkan-dev spirv-tools             --no-install-recommends
