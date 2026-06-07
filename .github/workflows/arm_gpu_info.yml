@@ -1,0 +1,44 @@
+name: ARM GPU Info
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect system info
+        run: |
+          {
+            echo "=== CPU ==="
+            lscpu | grep -E "Model|CPU\(s\)|Thread"
+            echo "=== RAM ==="
+            free -h
+            echo "=== DISK ==="
+            df -h /
+            echo "=== GPU ==="
+            lspci | grep -iE "vga|3d|display" || echo "No GPU detected"
+            echo "=== NVIDIA ==="
+            nvidia-smi 2>/dev/null || echo "No NVIDIA"
+            echo "=== OpenGL ==="
+            glxinfo 2>/dev/null | grep -i "version\|renderer" | head -5 || echo "No GLX"
+            echo "=== Vulkan ==="
+            vulkaninfo 2>/dev/null | head -10 || echo "No Vulkan"
+            echo "=== DISK TOTAL ==="
+            df -BG / | tail -1
+          } > gpu_info.txt
+          cat gpu_info.txt
+
+      - name: Save to repo
+        run: |
+          git config user.email "arm@agent.com"
+          git config user.name "ARM Agent"
+          git add gpu_info.txt
+          git commit -m "ARM: GPU info" || echo "No changes"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
