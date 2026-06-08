@@ -1,0 +1,36 @@
+name: ARM Builder - Auto Build
+on:
+  push:
+    paths:
+      - 'arm_builder/**'
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'App name'
+        default: 'MyApp'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install Android tools
+        run: |
+          sudo apt-get install -y ecj dx aapt apksigner
+      
+      - name: Run builder
+        run: |
+          python3 arm_builder/apk_stream_builder.py
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-builds
+          path: '*.apk'
